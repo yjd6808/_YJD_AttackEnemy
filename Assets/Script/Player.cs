@@ -14,7 +14,7 @@ using Vector3 = UnityEngine.Vector3;
 public class Player : MonoBehaviour
 {
     // FanAttack 관련 변수
-    public float fanRadious_ = 2.5f; // 부채꼴 반지름 길이
+    public float fanRadious_ = 5.0f; // 부채꼴 반지름 길이
     public float fanDegree_ = 45.0f; // 부채꼴 각도
     public float fanAttackDistance_ = 0.0f; // 이 공격이 캐릭터 중심으로부터 얼만큼 떨어진 위치에서부터 타격되는지
 
@@ -22,12 +22,11 @@ public class Player : MonoBehaviour
     public float squareWidthLength_ = 3.0f; // 캐릭터가 바라보는 방향의 사각형 변 길이
     public float squareHeightLength_ = 5.0f; // 캐릭터가 바라보는 방향의 사각형 변 길이
     public float squareAttackDistance_ = 3.0f; // 이 공격이 캐릭터 중심으로부터 얼만큼 떨어진 위치에서부터 타격되는지
+    public Vector2 squrePivot_ = new (0.5f, 0.0f);
 
     // CircleAttack 관련 변수
-    public float circalRadious_ = 2.5f; // 반지름 길이
+    public float circleRadious_ = 5.0f; // 반지름 길이
     public float circleAttackDistance_ = 3.0f;  // 이 공격이 캐릭터 중심으로부터 얼만큼 떨어진 위치에서부터 타격되는지
-
-    // 
 
     private Transform transform_;
     
@@ -38,11 +37,11 @@ public class Player : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Alpha1))       // 키 패드말고 숫
+        if (Input.GetKey(KeyCode.Alpha1))       // 키 패드말고 숫
         {
             FanAttack();
         }
-        else if (Input.GetKeyDown(KeyCode.Alpha2))
+        else if (Input.GetKey(KeyCode.Alpha2))
         {
             SquareAttack(1);
         }
@@ -50,7 +49,7 @@ public class Player : MonoBehaviour
         {
             CircleAttack();
         }
-        else if (Input.GetKeyDown(KeyCode.Alpha4))
+        else if (Input.GetKey(KeyCode.Alpha4))
         {
             SquareAttack(2);
         }
@@ -128,24 +127,23 @@ public class Player : MonoBehaviour
         Vector3 attackStartPos = CalcAttackStartPos(squareAttackDistance_);
         List<GameObject> enemies = GameObject.FindGameObjectsWithTag("Enemy").ToList();
 
-        Vector2 pivot = new Vector2(0.5f, 0.0f);    // 사각형의 중심점이 어디인지
         Vector3 forwardDir = transform_.forward;
         Vector3 rightDir = RotateDirectionVector(forwardDir, 90.0f);   // transform_.right와 같다...
 
         if (_version == 1)
         {
             Vector3 leftBottom = attackStartPos +
-                                 rightDir * (0 - pivot.x) * squareWidthLength_ +
-                                 forwardDir * (0 - pivot.y) * squareHeightLength_;
+                                 rightDir * (0 - squrePivot_.x) * squareWidthLength_ +
+                                 forwardDir * (0 - squrePivot_.y) * squareHeightLength_;
             //Vector3 rightBottom = attackStartPos +
-            //                      rightDir * (1 - pivot.x) * squareWidthLength_ +
-            //                      forwardDir * (0 - pivot.y) * squareHeightLength_;
+            //                      rightDir * (1 - squrePivot_.x) * squareWidthLength_ +
+            //                      forwardDir * (0 - squrePivot_.y) * squareHeightLength_;
             //Vector3 leftTop = attackStartPos +
-            //                  rightDir * (0 - pivot.x) * squareWidthLength_ +
-            //                  forwardDir * (1 - pivot.y) * squareHeightLength_; 
+            //                  rightDir * (0 - squrePivot_.x) * squareWidthLength_ +
+            //                  forwardDir * (1 - squrePivot_.y) * squareHeightLength_; 
             //Vector3 rightTop = attackStartPos +
-            //                   rightDir * (1 - pivot.x) * squareWidthLength_ + 
-            //                   forwardDir * (1 - pivot.y) * squareHeightLength_;
+            //                   rightDir * (1 - squrePivot_.x) * squareWidthLength_ + 
+            //                   forwardDir * (1 - squrePivot_.y) * squareHeightLength_;
             // 위 코드와 동일함
             Vector3 rightBottom = leftBottom + rightDir * squareWidthLength_;
             Vector3 leftTop = leftBottom + forwardDir * squareHeightLength_;
@@ -163,8 +161,10 @@ public class Player : MonoBehaviour
         }
         else
         {
-            float rangeX = squareWidthLength_ / 2.0f;
-            float rangeY = squareHeightLength_;
+            float rangeMinX = squareWidthLength_ * squrePivot_.x;
+            float rangeMaxX = squareWidthLength_ * (1 - squrePivot_.x);
+            float rangeMinY = squareHeightLength_ * squrePivot_.y;
+            float rangeMaxY = squareHeightLength_ * (1 - squrePivot_.y);
 
             foreach (var enemy in enemies)
             {
@@ -178,7 +178,7 @@ public class Player : MonoBehaviour
                 float radToEnemyY = MathF.Acos(Vector3.Dot(forwardDir, posToEnemy.normalized));
                 float localY = MathF.Cos(radToEnemyY) * posToEnemy.magnitude;
 
-                if (localX <= rangeX && localX >= -rangeX && localY >= 0 && localY <= rangeY)
+                if (localX >= rangeMinX && localX <= rangeMaxX && localY >= rangeMinY && localY <= rangeMaxY)
                 {
                     ProcessHit(enemy);
                 }
@@ -198,7 +198,7 @@ public class Player : MonoBehaviour
             float distance = CalcDistance(enemyTransform.position, attackStartPos);
 
             // 타격점으로부터 거리내에 있어야함.
-            if (distance >= fanRadious_)
+            if (distance >= circleRadious_)
                 continue;
 
             ProcessHit(enemy);
